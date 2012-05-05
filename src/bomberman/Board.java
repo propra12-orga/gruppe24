@@ -33,6 +33,25 @@ public class Board extends JPanel implements ActionListener
 			{ 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 },
 			{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 }
 		};
+	
+	/*private short screendata[][] =
+		{
+			{2,2,1,1,1,1,1,1,1,1,1,1,1,1,1},
+			{1,2,1,1,2,1,2,1,2,2,2,2,1,2,2},
+			{1,2,1,2,2,2,2,1,1,1,1,2,1,2,1},
+			{1,2,1,1,1,1,2,2,2,2,2,2,1,2,1},
+			{1,2,1,2,2,2,2,1,1,1,1,2,1,2,1},
+			{1,2,1,1,1,1,2,1,2,2,2,2,1,2,1},
+			{1,2,2,2,1,2,2,1,2,2,1,1,1,2,1},
+			{1,2,1,2,1,2,1,1,1,2,2,2,1,2,1},
+			{1,2,1,2,1,2,2,2,1,1,1,2,1,2,1},
+			{1,2,1,2,2,2,1,2,1,2,2,2,1,2,1},
+			{1,2,1,1,1,1,1,1,1,1,1,2,1,2,1},
+			{1,2,2,2,2,1,2,2,2,2,2,2,1,2,1},
+			{1,2,1,1,1,1,1,1,1,2,1,1,1,2,1},
+			{1,2,2,2,1,2,2,2,2,2,2,2,2,2,1},
+			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+		};*/
 
 	private Player player;
 	
@@ -43,7 +62,8 @@ public class Board extends JPanel implements ActionListener
 		addKeyListener(new TAdapter());
 		setFocusable(true);
 		getImages();
-		boardsize = new Dimension(480,480);
+		boardsize = new Dimension(screendata.length*blocksize,
+								screendata.length*blocksize);
 		setDoubleBuffered(true);
 		
 		timer = new Timer(15, this);
@@ -62,9 +82,9 @@ public class Board extends JPanel implements ActionListener
 			for(int j=0; j<screendata.length; j++)
 			{
 				if((screendata[i][j] & 1) != 0)
-					g2d.drawImage(img_wall, i*blocksize, j*blocksize, this);
+					g2d.drawImage(img_wall, j*blocksize, i*blocksize, this);
 				else if((screendata[i][j] & 2) != 0)
-					g2d.drawImage(img_air, i*blocksize, j*blocksize, this);
+					g2d.drawImage(img_air, j*blocksize, i*blocksize, this);
 			}
 	}
 	
@@ -76,6 +96,15 @@ public class Board extends JPanel implements ActionListener
 		drawBoard(g2d);
 		
 		player.move();
+		checkCollisions();
+		
+		g2d.drawImage(img_player, player_lastx, player_lasty, this);
+		Toolkit.getDefaultToolkit().sync();
+		g.dispose();
+	}
+	
+	public void checkCollisions()
+	{
 		if(collisionOccured())
 		{
 			player.setX(player_lastx);
@@ -86,10 +115,6 @@ public class Board extends JPanel implements ActionListener
 			player_lastx = player.getX();
 			player_lasty = player.getY();
 		}
-		
-		g2d.drawImage(img_player, player_lastx, player_lasty, this);
-		Toolkit.getDefaultToolkit().sync();
-		g.dispose();
 	}
 	
 	public boolean collisionOccured()
@@ -100,19 +125,19 @@ public class Board extends JPanel implements ActionListener
 		
 		int corner[][] = new int[4][2];
 		
-		// top left corner
+		// top left corner of player
 		corner[0][0] = x/blocksize;
 		corner[0][1] = y/blocksize;
 		
-		// top right corner
+		// top right corner of player
 		corner[1][0] = (x+playersize-1)/blocksize;
 		corner[1][1] = y/blocksize;
 		
-		// bottom left corner
+		// bottom left corner of player
 		corner[2][0] = x/blocksize;
 		corner[2][1] = (y+playersize-1)/blocksize;
 		
-		// bottom right corner
+		// bottom right corner of player
 		corner[3][0] = (x+playersize-1)/blocksize;
 		corner[3][1] = (y+playersize-1)/blocksize;
 		
@@ -121,9 +146,8 @@ public class Board extends JPanel implements ActionListener
 		else if(x+playersize>boardsize.width || y+playersize>boardsize.height)
 			return true;
 		for(int i=0; i<corner.length; i++)
-			if((screendata[corner[i][0]][corner[i][1]] & 1) != 0)
+			if((screendata[corner[i][1]][corner[i][0]] & 1) != 0)
 				return true;
-		
 		return false;
 	}
 	
