@@ -1,8 +1,8 @@
 package bomberman;
 
+import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
-
 import javax.swing.*;
 
 public class Board extends JPanel implements ActionListener
@@ -15,43 +15,8 @@ public class Board extends JPanel implements ActionListener
 	private String img_wall_name = "../images/wall.png",
 					img_air_name = "../images/air.png";
 	
-	private short screendata[][] =
-		{
-			{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-			{ 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 },
-			{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-			{ 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 },
-			{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-			{ 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 },
-			{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-			{ 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 },
-			{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-			{ 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 },
-			{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-			{ 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 },
-			{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-			{ 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2 },
-			{ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 }
-		};
-	
-	/*private short screendata[][] =
-		{
-			{2,2,1,1,1,1,1,1,1,1,1,1,1,1,1},
-			{1,2,1,1,2,1,2,1,2,2,2,2,1,2,2},
-			{1,2,1,2,2,2,2,1,1,1,1,2,1,2,1},
-			{1,2,1,1,1,1,2,2,2,2,2,2,1,2,1},
-			{1,2,1,2,2,2,2,1,1,1,1,2,1,2,1},
-			{1,2,1,1,1,1,2,1,2,2,2,2,1,2,1},
-			{1,2,2,2,1,2,2,1,2,2,1,1,1,2,1},
-			{1,2,1,2,1,2,1,1,1,2,2,2,1,2,1},
-			{1,2,1,2,1,2,2,2,1,1,1,2,1,2,1},
-			{1,2,1,2,2,2,1,2,1,2,2,2,1,2,1},
-			{1,2,1,1,1,1,1,1,1,1,1,2,1,2,1},
-			{1,2,2,2,2,1,2,2,2,2,2,2,1,2,1},
-			{1,2,1,1,1,1,1,1,1,2,1,1,1,2,1},
-			{1,2,2,2,1,2,2,2,2,2,2,2,2,2,1},
-			{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
-		};*/
+	private int screendata[][];
+	private int sdlengthA, sdlengthB;
 
 	private Player player;
 	
@@ -62,12 +27,10 @@ public class Board extends JPanel implements ActionListener
 		addKeyListener(new TAdapter());
 		setFocusable(true);
 		getImages();
-		boardsize = new Dimension(screendata.length*blocksize,
-								screendata.length*blocksize);
+
 		setDoubleBuffered(true);
 		
 		timer = new Timer(15, this);
-		timer.start();
 	}
 	
 	public void addNotify()
@@ -76,15 +39,50 @@ public class Board extends JPanel implements ActionListener
 		GameInit();
 	}
 	
+	public boolean loadLevel(String fileName)
+	{
+		try
+		{
+			DataInputStream in = new DataInputStream(
+									new BufferedInputStream(
+											new FileInputStream(fileName)));
+			
+			try
+			{
+				sdlengthA = in.readUnsignedByte();
+				sdlengthB = in.readUnsignedByte();
+				screendata = new int[sdlengthA][sdlengthB];
+				
+				for(int i=0; i<sdlengthA; i++)
+					for(int j=0; j<sdlengthB; j++)
+						screendata[i][j] = in.readUnsignedByte();
+				
+				boardsize = new Dimension(sdlengthA*blocksize, sdlengthB*blocksize);
+			}
+			catch(EOFException eof)
+			{
+				return false;
+			}
+			
+			in.close();
+		}
+		catch(IOException iox)
+		{
+			return false;
+		}
+		
+		return true;
+	}
+	
 	public void drawBoard(Graphics2D g2d)
 	{
-		for(int i=0; i<screendata.length; i++)
-			for(int j=0; j<screendata.length; j++)
+		for(int i=0; i<sdlengthA; i++)
+			for(int j=0; j<sdlengthB; j++)
 			{
 				if((screendata[i][j] & 1) != 0)
-					g2d.drawImage(img_wall, j*blocksize, i*blocksize, this);
+					g2d.drawImage(img_wall, i*blocksize, j*blocksize, this);
 				else if((screendata[i][j] & 2) != 0)
-					g2d.drawImage(img_air, j*blocksize, i*blocksize, this);
+					g2d.drawImage(img_air, i*blocksize, j*blocksize, this);
 			}
 	}
 	
@@ -146,15 +144,18 @@ public class Board extends JPanel implements ActionListener
 		else if(x+playersize>boardsize.width || y+playersize>boardsize.height)
 			return true;
 		for(int i=0; i<corner.length; i++)
-			if((screendata[corner[i][1]][corner[i][0]] & 1) != 0)
+			if((screendata[corner[i][0]][corner[i][1]] & 1) != 0)
 				return true;
 		return false;
 	}
 	
 	public void GameInit()
 	{
+		if(!loadLevel("level.dat"))
+			System.out.println("NO LEVEL.DAT FOUND");
 		player = new Player();
 		img_player = new ImageIcon(this.getClass().getResource(player.getImageString())).getImage();
+		timer.start();
 	}
 	
 	public void getImages()
